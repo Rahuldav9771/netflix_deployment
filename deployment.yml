@@ -3,19 +3,64 @@ kind: Deployment
 metadata:
   name: my-deployment
   namespace: mynamespace
+  labels:
+    app: myapp
+
 spec:
   replicas: 5
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
   selector:
     matchLabels:
       app: myapp
+
   template:
     metadata:
       labels:
         app: myapp
+
     spec:
       containers:
-      - name: myapp
-        image: devopsinsiders/netflix-clone
+        - name: myapp
+          image: devopsinsiders/netflix-clone:latest
+          imagePullPolicy: Always
 
-        ports:
-        - containerPort: 80
+          ports:
+            - containerPort: 80
+              protocol: TCP
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+
+      terminationGracePeriodSeconds: 30
